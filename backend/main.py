@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import data, conversations, chat
-from services.firebase import db
+from services.firebase import get_db
 
 # 환경변수 로드
 load_dotenv()
@@ -56,6 +56,7 @@ async def health_check():
 @app.post("/api/seed", tags=["관리"])
 async def seed_data():
     """비트코인 시드 데이터 180개 생성 및 업로드 (1회용)"""
+    db = get_db()
     # 이미 데이터가 있으면 스킵
     existing = db.collection("data").limit(1).get()
     if len(existing) > 0:
