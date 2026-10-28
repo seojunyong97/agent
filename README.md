@@ -14,7 +14,7 @@ BTC Insight는 비트코인 일별 가격 데이터를 분석하고, AI가 해�
 |------|------|
 | **백엔드** | Python 3.10+, FastAPI, Uvicorn |
 | **데이터베이스** | Firebase Firestore |
-| **AI** | Google Gemini 2.0 Flash |
+| **AI** | Google Gemini 3.8 Flash |
 | **프론트엔드** | HTML / CSS / JavaScript (바닐라) |
 | **백엔드 배포** | Render |
 | **프론트엔드 배포** | Vercel |
@@ -25,9 +25,9 @@ BTC Insight는 비트코인 일별 가격 데이터를 분석하고, AI가 해�
 
 | 서비스 | URL |
 |--------|-----|
-| **프론트엔드** | `https://btc-insight.vercel.app` *(배포 후 업데이트)* |
-| **백엔드 API** | `https://btc-insight-api.onrender.com` *(배포 후 업데이트)* |
-| **Swagger UI** | `https://btc-insight-api.onrender.com/docs` |
+| **프론트엔드** | https://agent-frontend-ruby-delta.vercel.app |
+| **백엔드 API** | https://agent-8lk2.onrender.com |
+| **Swagger UI** | https://agent-8lk2.onrender.com/docs |
 
 > ⚠️ Render 무료 티어 사용 시 첫 요청에 30초 정도 지연(콜드스타트)이 발생할 수 있습니다.
 
@@ -89,7 +89,7 @@ python seed_data.py
 
 | 변수명 | 설명 |
 |--------|------|
-| `API_BASE_URL` | 백엔드 API 서버 URL |
+| `API_BASE` | 백엔드 API 서버 URL (app.js에 직접 설정) |
 
 ---
 
@@ -126,7 +126,7 @@ ai-agent-project/
 │   │   └── chat.py          # AI 챗봇 API (컨텍스트 주입)
 │   └── services/
 │       ├── firebase.py      # Firestore 초기화
-│       └── openai_service.py # GPT API 호출
+│       └── openai_service.py # Gemini API 호출
 ├── frontend/
 │   ├── index.html           # 메인 HTML
 │   ├── style.css            # 스타일시트
