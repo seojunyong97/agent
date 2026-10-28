@@ -4,7 +4,7 @@
  */
 
 // ── 설정 ────────────────────────────────────────────
-const API_BASE = window.API_BASE_URL || "http://localhost:8000";
+const API_BASE = "https://agent-8lk2.onrender.com";
 
 let currentConversationId = null;
 let currentMessages = [];
