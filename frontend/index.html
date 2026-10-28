@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTC Insight — 비트코인 AI 비서</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 사이드바 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h1>₿ BTC Insight</h1>
+        <p class="subtitle">비트코인 AI 비서</p>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-btn active" data-tab="chat" onclick="switchTab('chat')">💬 채팅</button>
+        <button class="nav-btn" data-tab="data" onclick="switchTab('data')">📊 데이터</button>
+        <button class="nav-btn" data-tab="history" onclick="switchTab('history')">📁 기록</button>
+      </nav>
+
+      <!-- 데이터 요약 카드 -->
+      <div class="summary-card" id="summaryCard">
+        <h3>📈 데이터 요약</h3>
+        <div id="summaryContent">
+          <p class="loading-text">로딩 중...</p>
+        </div>
+      </div>
+
+      <!-- 대화 목록 (기록 탭) -->
+      <div class="conversation-list" id="conversationList" style="display:none;">
+        <div class="list-header">
+          <h3>이전 대화</h3>
+          <button class="btn-new-chat" onclick="startNewChat()">+ 새 대화</button>
+        </div>
+        <div id="convListItems"></div>
+      </div>
+
+      <div class="sidebar-footer">
+        <p>Render 무료 티어 사용 중<br>첫 요청은 30초 정도 걸릴 수 있어요 🙏</p>
+      </div>
+    </aside>
+
+    <!-- 메인 영역 -->
+    <main class="main-content">
+      <!-- 채팅 탭 -->
+      <section class="tab-content active" id="tabChat">
+        <div class="chat-container" id="chatMessages">
+          <div class="message assistant">
+            <div class="message-bubble">
+              안녕하세요! 비트코인 데이터 분석 AI 비서입니다. 🪙<br>
+              저장된 BTC 가격 데이터를 기반으로 질문에 답변해드릴게요.<br>
+              예: "최근 추세가 어때?", "최고가는 얼마야?"
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <div class="input-wrapper">
+            <input type="text" id="chatInput" placeholder="비트코인에 대해 물어보세요..."
+                   onkeypress="if(event.key==='Enter') sendMessage()" />
+            <button class="btn-send" onclick="sendMessage()" id="sendBtn">전송</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 데이터 관리 탭 -->
+      <section class="tab-content" id="tabData">
+        <div class="data-panel">
+          <div class="data-header">
+            <h2>📊 데이터 관리</h2>
+            <div class="data-actions">
+              <button class="btn-primary" onclick="toggleAddForm()">+ 데이터 추가</button>
+              <button class="btn-secondary" onclick="loadData()">🔄 새로고침</button>
+            </div>
+          </div>
+
+          <!-- 데이터 추가 폼 -->
+          <div class="add-form" id="addForm" style="display:none;">
+            <h3>새 데이터 추가</h3>
+            <div class="form-row">
+              <label>날짜</label>
+              <input type="date" id="inputDate" />
+            </div>
+            <div class="form-row">
+              <label>가격 (USD)</label>
+              <input type="number" id="inputValue" placeholder="예: 65000" step="0.01" />
+            </div>
+            <div class="form-row">
+              <label>메모</label>
+              <input type="text" id="inputMemo" placeholder="예: 급등세" />
+            </div>
+            <div class="form-buttons">
+              <button class="btn-primary" onclick="addData()">저장</button>
+              <button class="btn-secondary" onclick="toggleAddForm()">취소</button>
+            </div>
+          </div>
+
+          <!-- 수정 모달 -->
+          <div class="modal-overlay" id="editModal" style="display:none;">
+            <div class="modal">
+              <h3>데이터 수정</h3>
+              <input type="hidden" id="editId" />
+              <div class="form-row">
+                <label>날짜</label>
+                <input type="date" id="editDate" />
+              </div>
+              <div class="form-row">
+                <label>가격 (USD)</label>
+                <input type="number" id="editValue" step="0.01" />
+              </div>
+              <div class="form-row">
+                <label>메모</label>
+                <input type="text" id="editMemo" />
+              </div>
+              <div class="form-buttons">
+                <button class="btn-primary" onclick="updateData()">수정</button>
+                <button class="btn-secondary" onclick="closeEditModal()">취소</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 데이터 테이블 -->
+          <div class="data-table-wrapper">
+            <table class="data-table" id="dataTable">
+              <thead>
+                <tr>
+                  <th>날짜</th>
+                  <th>가격 (USD)</th>
+                  <th>메모</th>
+                  <th>액션</th>
+                </tr>
+              </thead>
+              <tbody id="dataBody">
+                <tr><td colspan="4" class="loading-text">로딩 중...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 대화 기록 탭 -->
+      <section class="tab-content" id="tabHistory">
+        <div class="history-panel">
+          <div class="data-header">
+            <h2>📁 대화 기록</h2>
+            <button class="btn-primary" onclick="startNewChat()">+ 새 대화</button>
+          </div>
+          <div id="historyList" class="history-list">
+            <p class="loading-text">로딩 중...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
