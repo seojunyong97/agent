@@ -117,6 +117,21 @@ async def get_data_summary():
     else:
         trend = "데이터 부족"
 
+    # 메모 요약 (최근 20개 중 내용이 있는 것)
+    recent_memos = []
+    for d in data_list[-20:]:
+        memo = d.get("memo", "").strip()
+        if memo and memo not in ("보합", "상승", "하락", "급등", "급락"):
+            recent_memos.append(f"{d['date']}: {memo}")
+
+    # 메모 키워드 통계
+    memo_counts = {}
+    for d in data_list:
+        memo = d.get("memo", "").strip()
+        if memo:
+            memo_counts[memo] = memo_counts.get(memo, 0) + 1
+    top_memos = sorted(memo_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
     return {
         "period": f"{dates[0]} ~ {dates[-1]}",
         "count": count,
@@ -127,4 +142,6 @@ async def get_data_summary():
         },
         "trend": trend,
         "data_type": "비트코인 일별 가격 (USD)",
+        "recent_memos": recent_memos,
+        "memo_summary": [f"{m[0]}({m[1]}건)" for m in top_memos],
     }

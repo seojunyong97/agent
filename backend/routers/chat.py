@@ -20,14 +20,28 @@ SYSTEM_PROMPT_TEMPLATE = """당신은 비트코인 데이터 분석 비서입니
 - 최고 가격: ${max:,.2f}
 - 최저 가격: ${min:,.2f}
 - 최근 트렌드: {trend}
-
+{memo_section}
 위 데이터를 기반으로 사용자의 질문에 맞춤형 답변을 제공하세요.
-수치를 언급할 때는 구체적으로 답변하고, 투자 조언은 삼가되 데이터 분석 인사이트는 제공하세요."""
+수치를 언급할 때는 구체적으로 답변하고, 투자 조언은 삼가되 데이터 분석 인사이트는 제공하세요.
+사용자의 메모가 있다면 그 내용도 참고하여 개인 맞춤형 답변을 제공하세요."""
 
 
 def _build_system_prompt(summary: dict) -> str:
     """데이터 요약을 시스템 프롬프트에 주입"""
     metrics = summary.get("metrics", {})
+
+    # 메모 섹션 구성
+    memo_section = ""
+    memo_summary = summary.get("memo_summary", [])
+    recent_memos = summary.get("recent_memos", [])
+
+    if memo_summary:
+        memo_section += f"\n- 메모 키워드: {', '.join(memo_summary)}"
+    if recent_memos:
+        memo_section += "\n- 최근 사용자 메모:\n"
+        for m in recent_memos[-10:]:
+            memo_section += f"  · {m}\n"
+
     return SYSTEM_PROMPT_TEMPLATE.format(
         data_type=summary.get("data_type", "시계열 데이터"),
         period=summary.get("period", "정보 없음"),
@@ -36,6 +50,7 @@ def _build_system_prompt(summary: dict) -> str:
         max=metrics.get("max", 0),
         min=metrics.get("min", 0),
         trend=summary.get("trend", "정보 없음"),
+        memo_section=memo_section,
     )
 
 
