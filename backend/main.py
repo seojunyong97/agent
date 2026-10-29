@@ -63,12 +63,12 @@ async def seed_data():
     for doc in existing:
         doc.reference.delete()
 
-    # 2026-05-03 ~ 2026-10-29 데이터 생성
+    # 2024-01-01 ~ 2026-10-29 데이터 생성
     data_list = []
-    num_days = 180
+    start_date = datetime(2024, 1, 1)
     end_date = datetime(2026, 10, 29)
-    start_date = end_date - timedelta(days=num_days - 1)
-    price = 72000.0
+    num_days = (end_date - start_date).days + 1
+    price = 42000.0  # 2024년 1월 초 비트코인 가격
 
     for i in range(num_days):
         current_date = start_date + timedelta(days=i)
@@ -76,6 +76,7 @@ async def seed_data():
         price *= (1 + daily_change)
         price = max(price, 50000)
 
+        # 마지막 날은 실제 가격에 맞춤
         if i == num_days - 1:
             price = 83039.0
 
