@@ -117,9 +117,9 @@ async def get_data_summary():
     else:
         trend = "데이터 부족"
 
-    # 메모 요약 (최근 20개 중 내용이 있는 것)
+    # 메모 요약 (전체 데이터에서 의미 있는 메모만 추출)
     recent_memos = []
-    for d in data_list[-20:]:
+    for d in data_list:
         memo = d.get("memo", "").strip()
         if memo and memo not in ("보합", "상승", "하락", "급등", "급락"):
             recent_memos.append(f"{d['date']}: {memo}")
