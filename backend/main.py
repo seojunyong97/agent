@@ -4,8 +4,7 @@ FastAPI 백엔드 메인 엔트리포인트
 """
 
 import os
-import random
-import httpx
+import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -56,7 +55,7 @@ async def health_check():
 
 @app.post("/api/seed", tags=["관리"])
 async def seed_data():
-    """CoinGecko에서 실제 비트코인 가격을 가져와 Firestore에 업로드"""
+    """실제 비트코인 가격 데이터 업로드 (2024-01-01 ~ 2026-10-29)"""
     db = get_db()
 
     # 기존 데이터 삭제
@@ -64,49 +63,20 @@ async def seed_data():
     for doc in existing:
         doc.reference.delete()
 
-    # CoinGecko API로 실제 비트코인 가격 가져오기 (최대 365일씩)
-    all_prices = []
+    # JSON 파일에서 가격 데이터 로드
+    import pathlib
+    json_path = pathlib.Path(__file__).parent / "real_btc_prices.json"
+    with open(json_path, "r") as f:
+        prices = json.load(f)
 
-    # 2024-01-01 ~ 오늘까지 구간을 나눠서 요청
-    start_ts = int(datetime(2024, 1, 1).timestamp())
-    now_ts = int(datetime.utcnow().timestamp())
-
-    # 365일 단위로 나눠서 요청 (CoinGecko 무료 제한)
-    current_start = start_ts
-    async with httpx.AsyncClient() as client:
-        while current_start < now_ts:
-            current_end = min(current_start + 365 * 86400, now_ts)
-            url = (
-                f"https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range"
-                f"?vs_currency=usd&from={current_start}&to={current_end}"
-            )
-            resp = await client.get(url, timeout=30)
-            if resp.status_code == 200:
-                prices = resp.json().get("prices", [])
-                all_prices.extend(prices)
-            current_start = current_end
-
-    if not all_prices:
-        return {"message": "CoinGecko에서 데이터를 가져오지 못했습니다.", "count": 0}
-
-    # 날짜별 평균 가격으로 정리 (중복 날짜 제거)
-    daily = {}
-    for ts, price in all_prices:
-        date_str = datetime.utcfromtimestamp(ts / 1000).strftime("%Y-%m-%d")
-        if date_str not in daily:
-            daily[date_str] = []
-        daily[date_str].append(price)
-
+    # 전일 대비 변동률로 메모 생성
     data_list = []
-    sorted_dates = sorted(daily.keys())
     prev_price = None
 
-    for date_str in sorted_dates:
-        avg_price = sum(daily[date_str]) / len(daily[date_str])
-
-        # 전일 대비 변동률로 메모 생성
+    for item in prices:
+        price = item["value"]
         if prev_price:
-            change = (avg_price - prev_price) / prev_price
+            change = (price - prev_price) / prev_price
             if change > 0.05:
                 memo = "급등"
             elif change > 0.02:
@@ -120,10 +90,10 @@ async def seed_data():
         else:
             memo = "보합"
 
-        prev_price = avg_price
+        prev_price = price
         data_list.append({
-            "date": date_str,
-            "value": round(avg_price, 2),
+            "date": item["date"],
+            "value": price,
             "memo": memo,
             "created_at": datetime.utcnow().isoformat(),
         })
@@ -141,5 +111,5 @@ async def seed_data():
     return {
         "message": "실제 비트코인 가격 데이터 업로드 완료!",
         "count": len(data_list),
-        "period": f"{sorted_dates[0]} ~ {sorted_dates[-1]}",
+        "period": f"{data_list[0]['date']} ~ {data_list[-1]['date']}",
     }
