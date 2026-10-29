@@ -18,19 +18,26 @@ load_dotenv()
 def generate_btc_data(num_days=180):
     """
     리얼리스틱한 비트코인 가격 데이터 생성 (180일분)
-    2024-07-01 ~ 2024-12-27 기간의 시뮬레이션 데이터
+    2026-05-03 ~ 2026-10-29 기간의 시뮬레이션 데이터
+    실제 2026년 10월 기준 ~$83,000 수준에 맞춤
     """
     data = []
-    start_date = datetime(2024, 7, 1)
-    price = 62000  # 시작 가격 (USD)
+    # 오늘(2026-10-29)부터 180일 전 = 2026-05-03
+    end_date = datetime(2026, 10, 29)
+    start_date = end_date - timedelta(days=num_days - 1)
+    price = 72000  # 시작 가격 (2026년 5월 초 추정)
 
     for i in range(num_days):
         current_date = start_date + timedelta(days=i)
 
-        # 랜덤 변동 + 약간의 상승 추세
-        daily_change = random.gauss(0.002, 0.03)  # 평균 +0.2%, 표준편차 3%
+        # 랜덤 변동 + 약간의 상승 추세 (최종 ~$83,000 도달)
+        daily_change = random.gauss(0.0008, 0.025)  # 완만한 상승
         price *= (1 + daily_change)
-        price = max(price, 20000)  # 최소 $20,000
+        price = max(price, 50000)  # 최소 $50,000
+
+        # 마지막 날은 실제 가격에 맞춤
+        if i == num_days - 1:
+            price = 83039
 
         # 메모 생성
         if daily_change > 0.05:
@@ -70,7 +77,7 @@ def upload_to_firestore(data_list):
 
     db = firestore.client()
 
-    # 기존 data 컬렉션 비우기 (선택)
+    # 기존 data 컬렉션 비우기
     print("🗑️  기존 데이터 삭제 중...")
     existing = db.collection("data").stream()
     for doc in existing:
