@@ -55,23 +55,29 @@ async def health_check():
 
 @app.post("/api/seed", tags=["관리"])
 async def seed_data():
-    """비트코인 시드 데이터 180개 생성 및 업로드 (1회용)"""
+    """비트코인 시드 데이터 180개 생성 및 업로드 — 기존 데이터 삭제 후 교체"""
     db = get_db()
-    # 이미 데이터가 있으면 스킵
-    existing = db.collection("data").limit(1).get()
-    if len(existing) > 0:
-        return {"message": "이미 데이터가 존재합니다.", "count": 0}
 
+    # 기존 데이터 삭제
+    existing = db.collection("data").stream()
+    for doc in existing:
+        doc.reference.delete()
+
+    # 2026-05-03 ~ 2026-10-29 데이터 생성
     data_list = []
-    start_date = datetime(2024, 7, 1)
-    price = 62000.0
-    random.seed(42)
+    num_days = 180
+    end_date = datetime(2026, 10, 29)
+    start_date = end_date - timedelta(days=num_days - 1)
+    price = 72000.0
 
-    for i in range(180):
+    for i in range(num_days):
         current_date = start_date + timedelta(days=i)
-        daily_change = random.gauss(0.002, 0.03)
+        daily_change = random.gauss(0.0008, 0.025)
         price *= (1 + daily_change)
-        price = max(price, 20000)
+        price = max(price, 50000)
+
+        if i == num_days - 1:
+            price = 83039.0
 
         if daily_change > 0.05:
             memo = "급등"

@@ -1,9 +1,10 @@
 """데이터 CRUD + 요약 API 라우터"""
 
+import random
 from fastapi import APIRouter, HTTPException
 from models.schemas import DataCreate, DataUpdate, DataResponse
 from services.firebase import get_db
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/data", tags=["데이터 관리"])
 
@@ -145,3 +146,53 @@ async def get_data_summary():
         "recent_memos": recent_memos,
         "memo_summary": [f"{m[0]}({m[1]}건)" for m in top_memos],
     }
+
+
+@router.post("/seed", status_code=201)
+async def seed_data():
+    """시드 데이터 생성 API — 기존 데이터 삭제 후 180일분 새 데이터 업로드"""
+    db = get_db()
+
+    # 기존 데이터 삭제
+    existing = db.collection("data").stream()
+    for doc in existing:
+        doc.reference.delete()
+
+    # 2026-05-03 ~ 2026-10-29 데이터 생성
+    num_days = 180
+    end_date = datetime(2026, 10, 29)
+    start_date = end_date - timedelta(days=num_days - 1)
+    price = 72000.0
+
+    data_list = []
+    for i in range(num_days):
+        current_date = start_date + timedelta(days=i)
+        daily_change = random.gauss(0.0008, 0.025)
+        price *= (1 + daily_change)
+        price = max(price, 50000)
+
+        if i == num_days - 1:
+            price = 83039.0
+
+        if daily_change > 0.05:
+            memo = "급등"
+        elif daily_change > 0.02:
+            memo = "상승"
+        elif daily_change < -0.05:
+            memo = "급락"
+        elif daily_change < -0.02:
+            memo = "하락"
+        else:
+            memo = "보합"
+
+        doc_ref = db.collection("data").document()
+        doc_data = {
+            "date": current_date.strftime("%Y-%m-%d"),
+            "value": round(price, 2),
+            "memo": memo,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        doc_ref.set(doc_data)
+        data_list.append(doc_data)
+
+    return {"message": f"{len(data_list)}개 데이터 업로드 완료", "period": f"{data_list[0]['date']} ~ {data_list[-1]['date']}"}
